@@ -5,12 +5,16 @@ import android.location.Location
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
-import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.afollestad.assent.Permission
 import com.afollestad.assent.runWithPermissions
 import kotlinx.android.synthetic.main.activity_main.*
+import okhttp3.Call
+import okhttp3.Callback
+import okhttp3.OkHttpClient
+import okhttp3.Response
+import java.io.IOException
 
 
 class MainActivity : AppCompatActivity() {
@@ -45,13 +49,17 @@ class MainActivity : AppCompatActivity() {
                 }
                 runWithPermissions(Permission.ACCESS_FINE_LOCATION) {
                     if (LocationUtils.isLocationProviderEnabled(this@MainActivity)) {
-                        Log.e("LOCATION", '干'.toString())
                         Latitude_text.text = ""
-                        LocationUtils.getLocation(this@MainActivity, object : Callback {
-                            override fun onLocationChanged(location: Location) {
+                        Longitude_text.text = ""
+                        LocationUtils.getLocation(this@MainActivity, object : com.iotxc.foregroundservice.Callback {
+                         override fun onLocationChanged(location: Location) {
                                 Latitude_text.text = location.latitude.toString()
                                 Longitude_text.text = location.longitude.toString()
                                 Log.e("LOCATION", location.longitude.toString() + "," + location.longitude.toString())
+                                val locationData = HashMap<String, String>()
+                                locationData["latitude"] = location.latitude.toString()
+                                locationData["longitude"] = location.longitude.toString()
+                                postData(locationData)
                             }
                         })
                     } else {
@@ -60,5 +68,19 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    private fun postData(data: HashMap<String, String>) {
+        var client = OkHttpClient()
+        var request= OKHttpRequest(client)
+        request.POST("http://192.168.43.71:7001/api/v2/location", data, object: Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                TODO("Not yet implemented")
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                Log.d("post", response.toString())
+            }
+        })
     }
 }
